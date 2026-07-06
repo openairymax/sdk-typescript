@@ -1,264 +1,195 @@
-# Toolkit TypeScript — AgentRT TypeScript SDK
+**Language:** English | [简体中文](README_zh.md)
 
-**模块路径**: `sdk/typescript/`
-**版本**: v0.1.0 (SDK v0.1.0)
+# Airymax TypeScript SDK
 
-## 概述
+[![Version](https://img.shields.io/badge/version-0.1.1-5a6b7e)](https://atomgit.com/openairymax/sdk-typescript)
+[![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-AgentRT TypeScript SDK 提供基于 TypeScript 的 AgentRT 系统编程接口，适用于 Node.js 环境。SDK 采用模块化设计，包含客户端层、业务模块层（Task/Memory/Session/Skill）、系统调用绑定、遥测和插件系统，与 Python/Go/Rust SDK 保持 API 一致性。提供完整的类型定义和 ES Module 支持。
+> Official TypeScript development kit for the [Airymax](https://atomgit.com/openairymax/airymaxhub) AI Agent Runtime Platform.
+> One of the leaf repositories aggregated by the [sdk](https://atomgit.com/openairymax/sdk) management repo.
+> Published as the npm package `@agentrt/sdk`.
 
-## 目录结构
+---
+
+## Overview
+
+The **Airymax TypeScript SDK** (`@agentrt/sdk`) provides a fully-typed Node.js interface to the Airymax runtime. It shares the same double-layer API architecture as the other language SDKs, ships with first-class type definitions, and is the natural choice for JavaScript/TypeScript agent applications, server-side integrations, and web frontends that talk to the runtime.
+
+Agent applications built on this SDK are **runtime tenants**: they invoke system capabilities through the SDK rather than touching kernel internals directly. The SDK is async/Promise-based, supports streaming over WebSocket (`ws`), and exposes a typed error-code system that mirrors the runtime's response codes.
+
+## Double-Layer API Architecture
+
+Every Airymax SDK ships a top-level `AgentRTClient` that nests four resource clients, each covering one plane of the runtime:
 
 ```
-typescript/
+AgentRTClient
+├── CognitionClient   # Cognition plane: tasks / loops / inference
+├── SafetyClient      # Safety plane: audit / sandbox / policy
+├── ToolClient        # Tool plane: register / invoke / orchestrate
+└── ChatClient        # Chat plane: LLM routing / sessions / streaming
+```
+
+In TypeScript these are accessed through `client.cognition`, `client.safety`, `client.tool`, and `client.chat`, each a typed client backed by an `axios` HTTP transport with retry and a `ws` streaming transport.
+
+## Directory Structure
+
+```
+sdk-typescript/
 ├── src/
-│   ├── index.ts                # 模块入口，导出所有公共 API
-│   ├── agentrt.ts              # AgentRT 主类 / createAgentRT 工厂
-│   ├── manager.ts              # 配置管理（ConfigOption/环境变量）
-│   ├── config.ts               # 配置类型定义
-│   ├── errors.ts               # 错误定义与错误码
-│   ├── protocol.ts             # 协议处理
-│   ├── syscall.ts              # 系统调用绑定
-│   ├── telemetry.ts            # OpenTelemetry 遥测
-│   ├── plugin.ts               # 插件系统
-│   ├── task.ts                 # Task 领域模型
-│   ├── memory.ts               # Memory 领域模型
-│   ├── session.ts              # Session 领域模型
-│   ├── skill.ts                # Skill 领域模型
+│   ├── index.ts                # Public API exports
+│   ├── agentrt.ts              # AgentRT main class + createAgentRT factory
+│   ├── agent.ts                # AgentRTClient + nested resource clients
+│   ├── manager.ts              # Configuration management (options + env)
+│   ├── config.ts               # Config type definitions
+│   ├── errors.ts               # Error types + error-code constants
+│   ├── protocol.ts             # Protocol handling
+│   ├── syscall.ts              # Syscall bindings
+│   ├── telemetry.ts            # OpenTelemetry tracing
+│   ├── plugin.ts               # Plugin system
 │   ├── client/
-│   │   ├── index.ts            # 客户端导出
-│   │   ├── client.ts           # Client/APIClient 实现
-│   │   └── mock.ts             # MockClient 测试客户端
-│   ├── modules/
-│   │   ├── index.ts            # 模块导出
-│   │   ├── base_manager.ts     # BaseManager 基类
+│   │   ├── index.ts            # Client exports
+│   │   ├── client.ts           # Client / APIClient implementation
+│   │   └── mock.ts             # MockClient for tests
+│   ├── modules/                # Domain module managers
+│   │   ├── index.ts
+│   │   ├── base_manager.ts
 │   │   ├── task.ts             # TaskManager
 │   │   ├── memory.ts           # MemoryManager / MemoryWriteItem
 │   │   ├── session.ts          # SessionManager
 │   │   └── skill.ts            # SkillManager / SkillExecuteRequest
 │   ├── types/
-│   │   ├── index.ts            # 类型导出
-│   │   ├── enums.ts            # 枚举类型
-│   │   ├── models.ts           # 领域模型
-│   │   └── requests.ts         # 请求/响应类型
+│   │   ├── index.ts
+│   │   ├── enums.ts            # TaskStatus / MemoryLayer / SessionStatus / ...
+│   │   ├── models.ts           # Domain models
+│   │   └── requests.ts         # Request / response types
 │   └── utils/
-│       ├── index.ts            # 工具函数导出
-│       ├── helpers.ts          # 通用工具函数
-│       └── logger.ts           # 日志工具
-├── tests/                      # 测试套件
-│   ├── base_manager.test.ts    # BaseManager 测试
-│   ├── client.test.ts          # 客户端测试
-│   ├── config.test.ts          # 配置测试
-│   ├── helpers.test.ts         # 工具函数测试
-│   ├── logger.test.ts          # 日志测试
-│   ├── syscall.test.ts         # 系统调用测试
-│   ├── telemetry.test.ts       # 遥测测试
-│   ├── plugin.test.ts          # 插件测试
-│   ├── benchmark_performance.test.ts  # 性能基准测试
-│   └── test_comprehensive.test.ts     # 综合测试
-├── package.json                # NPM 配置
-├── tsconfig.json               # TypeScript 配置
-└── README.md                   # 本文件
+│       ├── index.ts
+│       ├── helpers.ts          # Generic helpers
+│       └── logger.ts           # Logger
+├── tests/                      # Jest test suite (incl. benchmark)
+├── package.json                # npm manifest (@agentrt/sdk)
+├── tsconfig.json               # TypeScript compiler config
+├── jest.config.js              # Jest config
+└── README.md                   # This file
 ```
 
-## 核心组件
+## Upstream & Downstream Dependencies
 
-### AgentRT 主类
+### Upstream
+
+- **Runtime**: Connects to a running Airymax / AgentRT instance (`gateway_d`) over HTTP and JSON-RPC 2.0, with WebSocket streaming for chat.
+- **Protocol**: Speaks the AgentsIPC protocol defined in the platform `protocols/` tree.
+- **Configuration**: Resolved from constructor options, then environment variables (`AGENTRT_ENDPOINT`, `AGENTRT_TIMEOUT`, `AGENTRT_API_KEY`), then a `http://127.0.0.1:18789` default.
+
+### Downstream
+
+- **Agent applications**: User-written agents import `@agentrt/sdk` to become runtime tenants.
+- **Web frontends**: Browser-side dashboards and agent consoles that call the runtime via a gateway.
+- **Examples**: Reference agents in the platform `ecosystem/examples/`.
+
+## Installation
+
+```bash
+# From npm (when published)
+npm install @agentrt/sdk
+
+# From source
+cd sdk-typescript
+npm install
+npm run build
+```
+
+**Requirements:** Node.js >= 18. Runtime dependencies: `axios` (HTTP), `ws` (WebSocket streaming). Dev dependencies: `typescript`, `jest`, `ts-jest`, `@types/node`, `eslint`, `prettier`.
+
+## Quick Start
+
+### Create a client
 
 ```typescript
-import { AgentRT, createAgentRT } from 'agentrt';
+import { AgentRTClient, createAgentRT } from '@agentrt/sdk';
 
-const client = new AgentRT({
-    endpoint: 'http://localhost:18789',
-    timeout: 30,
-    apiKey: 'your-api-key',
+const client = new AgentRTClient({
+  endpoint: 'http://localhost:18789',
+  timeout: 30,
+  apiKey: 'your-api-key',
 });
 
-const client2 = createAgentRT({
-    endpoint: 'http://localhost:18789',
-});
+// Or use the factory:
+const client2 = createAgentRT({ endpoint: 'http://localhost:18789' });
 ```
 
-### 业务模块层
+### Cognition plane — tasks
 
-| 管理器 | 说明 | 核心方法 |
-|--------|------|----------|
-| `TaskManager` | 任务管理 | submit/get/cancel/list/wait |
-| `MemoryManager` | 记忆管理 | write/read/search/delete/list |
-| `SessionManager` | 会话管理 | create/get/close/list |
-| `SkillManager` | 技能管理 | load/execute/unload/list |
+```typescript
+const task = await client.cognition.submitTask({ input: 'analyze this data' });
+const result = await client.cognition.wait(task.id, 60_000);
+console.log('Result:', result.output);
+```
 
-### 类型系统
+### Chat plane — streaming
 
-#### 枚举类型 (`types/enums.ts`)
+```typescript
+for await (const chunk of client.chat.stream({ prompt: 'summarize the report' })) {
+  process.stdout.write(chunk.delta ?? '');
+}
+```
 
-| 枚举 | 值 |
-|------|-----|
-| `TaskStatus` | PENDING/RUNNING/COMPLETED/FAILED/CANCELLED |
-| `MemoryLayer` | L1/L2/L3/L4 |
-| `SessionStatus` | ACTIVE/EXPIRED/CLOSED |
-| `SkillStatus` | LOADED/EXECUTING/COMPLETED/FAILED |
-| `SpanStatus` | OK/ERROR/UNSET |
-
-#### 领域模型 (`types/models.ts`)
-
-| 模型 | 字段 |
-|------|------|
-| `Task` | taskId/description/status/result/createdAt/updatedAt |
-| `TaskResult` | success/output/error/metrics |
-| `Memory` | memoryId/content/createdAt/metadata |
-| `MemorySearchResult` | memory/score/highlight |
-| `Session` | sessionId/status/createdAt/metadata |
-| `Skill` | skillId/name/status/capabilities |
-| `SkillResult` | success/output/error/executionTime |
-
-### 配置管理
+### Configuration
 
 ```typescript
 import {
-    newConfig, newConfigFromEnv, defaultConfig,
-    withEndpoint, withTimeout, withMaxRetries,
-    withAPIKey, withUserAgent, withDebug,
-    withLogLevel, withMaxConnections, withHeaders,
-    validateConfig, cloneConfig, mergeConfig,
-} from 'agentrt';
+  newConfig, newConfigFromEnv,
+  withEndpoint, withTimeout, withMaxRetries,
+  withAPIKey, withUserAgent, withDebug,
+} from '@agentrt/sdk';
 
 const config = newConfig(
-    withEndpoint('http://localhost:18789'),
-    withTimeout(30000),
-    withAPIKey('your-key'),
-    withDebug(true),
+  withEndpoint('http://localhost:18789'),
+  withTimeout(30_000),
+  withAPIKey('your-key'),
+  withDebug(true),
 );
 
 const envConfig = newConfigFromEnv();
 ```
 
-### 系统调用绑定
-
-| 类型 | 说明 |
-|------|------|
-| `SyscallBinding` | 系统调用绑定接口 |
-| `HttpSyscallBinding` | HTTP 系统调用实现 |
-| `TaskSyscall` / `MemorySyscall` / `SessionSyscall` / `SkillSyscall` / `AgentSyscall` | 各模块系统调用 |
-
-## 接口说明
-
-### TaskManager
+### Syscall bindings (lower-level API)
 
 ```typescript
-const taskMgr = client.taskManager();
-
-const task = await taskMgr.submit('analyze data');
-const result = await taskMgr.wait(task.id, 30000);
-const tasks = await taskMgr.list({ limit: 10 });
-await taskMgr.cancel(taskId);
-```
-
-### MemoryManager
-
-```typescript
-const memoryMgr = client.memoryManager();
-
-const memoryId = await memoryMgr.write('content', { tag: 'important' });
-const memories = await memoryMgr.search('query', 5);
-const memory = await memoryMgr.read(memoryId);
-await memoryMgr.delete(memoryId);
-```
-
-### SessionManager
-
-```typescript
-const sessionMgr = client.sessionManager();
-
-const session = await sessionMgr.create();
-const existing = await sessionMgr.get(sessionId);
-await sessionMgr.close(sessionId);
-```
-
-### SkillManager
-
-```typescript
-const skillMgr = client.skillManager();
-
-const skill = await skillMgr.load('browser-skill');
-const result = await skillMgr.execute({
-    skillId: skill.id,
-    params: { url: 'https://example.com' },
-});
-await skillMgr.unload(skill.id);
-```
-
-## 依赖关系
-
-- **Node.js**: >= 18.0.0
-- **核心依赖**: axios, ws
-- **开发依赖**: typescript, jest, ts-jest, @types/node
-- **运行时**: 仅支持 Node.js 环境（依赖 axios 和 ws 等 Node.js 专用库）
-
-## 构建说明
-
-```bash
-# 安装依赖
-npm install
-
-# 编译 TypeScript
-npm run build
-
-# 运行测试
-npm test
-
-# 运行特定测试
-npm test -- --testPathPattern=client
-
-# 运行基准测试
-npm run test:benchmark
-
-# 代码检查
-npm run lint
-```
-
-## 使用示例
-
-### 基本使用
-
-```typescript
-import { AgentRT } from 'agentrt';
-
-const client = new AgentRT({ endpoint: 'http://localhost:18789' });
-
-const task = await client.taskManager().submit('Generate a report');
-const result = await client.taskManager().wait(task.id, 60000);
-console.log('Result:', result.output);
-
-await client.close();
-```
-
-### 使用工厂函数
-
-```typescript
-import { createAgentRT } from 'agentrt';
-
-const client = createAgentRT({
-    endpoint: 'http://localhost:18789',
-    apiKey: process.env.AGENTRT_API_KEY,
-    timeout: 30000,
-});
-
-const memoryId = await client.memoryManager().write('Important data');
-const results = await client.memoryManager().search('data', 5);
-```
-
-### 使用系统调用
-
-```typescript
-import { HttpSyscallBinding, TaskSyscall } from 'agentrt';
+import { HttpSyscallBinding, TaskSyscall } from '@agentrt/sdk';
 
 const binding = new HttpSyscallBinding('http://localhost:18789');
 const taskSyscall = new TaskSyscall(binding);
-
 const task = await taskSyscall.submit({ description: 'Process data' });
 ```
 
----
+## Build & Test
 
-© 2026 SPHARX Ltd. All Rights Reserved.
+```bash
+# Compile TypeScript
+npm run build
+
+# Run the test suite
+npm test
+
+# Run a specific test
+npm test -- --testPathPattern=client
+
+# Run benchmarks
+npm run test:performance
+
+# Lint and format
+npm run lint
+npm run format
+```
+
+## Branch Strategy
+
+This leaf repository is developed on **`feature/official-hubs-01`**. The aggregating `sdk` management repo stays on `main`.
+
+## License
+
+Dual-licensed under **AGPL v3 + Apache 2.0** (SPDX: `AGPL-3.0-or-later OR Apache-2.0`). See [LICENSE](LICENSE) for the full text.
+
+Copyright (c) 2025-2026 **SPHARX Ltd.** All Rights Reserved.
