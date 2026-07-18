@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025-2026 SPHARX Ltd.
+// SPDX-License-Identifier: AGPL-3.0-or-later OR Apache-2.0
+
 // AgentRT TypeScript SDK - Plugin Framework Tests
 // 验证: 注册→发现→加载→调用→卸载 完整生命周期
 // Version: 4.0.0 (production audit fix: async load/unload)
