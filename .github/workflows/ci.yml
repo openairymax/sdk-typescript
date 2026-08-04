@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
 
       - name: License check
         run: |
@@ -30,29 +31,10 @@ jobs:
             echo "[NO] LICENSE missing" && exit 1
           fi
 
-      - name: README check
-        run: |
-          if [ -f "README.md" ] || [ -f "README_zh.md" ]; then
-            echo "[OK] README present"
-          else
-            echo "[WARN] README missing"
-          fi
+      - name: Install dependencies (npm ci)
+        run: npm ci
 
-      - name: NOTICE check
+      - name: Run tests (jest)
         run: |
-          if [ -f "NOTICE" ]; then
-            echo "[OK] NOTICE present"
-          else
-            echo "[WARN] NOTICE missing"
-          fi
-
-      - name: TypeScript build check
-        run: |
-          if [ -f "package.json" ]; then
-            npm install 2>&1 || echo "[WARN] npm install failed"
-            if [ -f "tsconfig.json" ]; then
-              npx tsc --noEmit 2>&1 || echo "[WARN] tsc check failed (may need cross-module deps)"
-            fi
-          else
-            echo "[INFO] No package.json, skipping build"
-          fi
+          # 真实运行 TypeScript SDK 测试（jest），任何失败都会使 job 失败。
+          npm test
