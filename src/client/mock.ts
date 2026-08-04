@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later OR Apache-2.0
 
 // AgentRT TypeScript SDK - Mock Client
-// Version: 0.1.0
+// Version: 0.1.1
 // Last updated: 2026-04-27
 //
 // WARNING: 测试工具，仅供单元测试使用。不应在生产代码中引用。
@@ -86,7 +86,7 @@ export class MockClient implements APIClient {
   async health(): Promise<HealthStatus> {
     return {
       status: 'healthy',
-      version: '0.1.0-mock',
+      version: '0.1.1-mock',
       uptime: 0,
       checks: { database: 'ok', memory: 'ok' },
       timestamp: new Date(),
