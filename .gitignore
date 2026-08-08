@@ -1,8 +1,10 @@
 # =============================================================================
 # Airymax SDK TypeScript — .gitignore
+# 策略：非必要不追踪。仅忽略本地构建产物与运行时数据，
+#       源码与必要配置保持可追踪，避免误推远程仓库
 # =============================================================================
 
-# Node.js
+# ---------- Node.js ----------
 node_modules/
 **/node_modules/
 npm-debug.log*
@@ -10,7 +12,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# 构建产物
+# ---------- 构建产物 ----------
 dist/
 build/
 out/
@@ -19,46 +21,42 @@ out/
 *.d.ts
 !*.config.js
 
-# TypeScript 缓存
+# ---------- TypeScript 缓存 ----------
 *.tsbuildinfo
 
-# 测试与覆盖率
+# ---------- 测试与覆盖率 ----------
 coverage/
 .nyc_output/
 test-results/
 
-# IDE 配置
+# ---------- IDE 与编辑器配置 ----------
 .vscode/
 .idea/
 .vs/
+.trae/
 *.code-workspace
 
-# 环境与密钥
+# ---------- 环境与密钥（禁止入库） ----------
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.p12
 
-# 操作系统
-.DS_Store
-Thumbs.db
-
-# 编辑器临时文件
-*.swp
-*.swo
-*~
-
-# 日志与临时文件
+# ---------- 运行时数据 ----------
 *.log
+*.sock
+*.db
 *.tmp
 *.bak
 
-# ===== 通用兜底（2026-08 统一更新） =====
-# 误放的大型运行时目录（JDK 等）与运行时产物
-oracleJdk-*/
-jdk-*/
-*.log
-*.sock
-/run/
-/logs/
+# ---------- 操作系统文件 ----------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---------- 编辑器临时文件 ----------
+*.swp
+*.swo
+*~
