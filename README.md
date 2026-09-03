@@ -2,7 +2,7 @@
 
 # Airymax TypeScript SDK
 
-[![Version](https://img.shields.io/badge/version-0.1.1-5a6b7e)](https://atomgit.com/openairymax/sdk-typescript)
+[![Version](https://img.shields.io/badge/version-0.1.9-5a6b7e)](https://atomgit.com/openairymax/sdk-typescript)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
@@ -186,7 +186,7 @@ npm run format
 
 ## Branch Strategy
 
-This leaf repository is developed on **`feature/official-hubs-01`**. The aggregating `sdk` management repo stays on `main`.
+This leaf repository is developed on **`develop/hubs-01`**; its `main` is a release snapshot. The aggregating `sdk` management repo develops directly on `main`.
 
 ## License
 
