@@ -56,6 +56,9 @@ export { MemoryManager, MemoryWriteItem } from './modules/memory';
 export { SessionManager } from './modules/session';
 export { SkillManager, SkillExecuteRequest } from './modules/skill';
 
+// 协议客户端
+export * from './protocol';
+
 // 类型
 export * from './types';
 
